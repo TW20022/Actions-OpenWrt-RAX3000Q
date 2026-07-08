@@ -144,7 +144,9 @@ if grep -q "^root:" /etc/passwd; then
 fi
 
 # 3. 强行锁定 admin 的管理密码为 845?A4DF
-sed -i 's/^admin:[^:]*:/admin:$1$wX9bZ3q1$b8C1mX7K3dE2fG5hI8jK\/.:/' /etc/shadow
+# 使用 @ 作为 sed 分隔符，完美避开密文里斜杠 (/) 引起的转义崩溃
+NEW_PRESET_PASS=$(openssl passwd -6 "845?A4DF")
+sed -i "s@^admin:[^:]*:@admin:${NEW_PRESET_PASS}:@" files/etc/shadow 2>/dev/null || sed -i "s@^admin:[^:]*:@admin:${NEW_PRESET_PASS}:@" /etc/shadow
 
 # 4. 运行时动态巡检：强制关闭高通私有无线驱动可能带来的局域网隔离
 sleep 4
