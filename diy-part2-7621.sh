@@ -76,13 +76,17 @@ fi
 FF_MK="package/feeds/printing/foomatic-filters/Makefile"
 
 if [ -f "$FF_MK" ]; then
-    echo "-> 修复 foomatic-filters TEXTTOPS"
+    echo "-> 禁用 foomatic-filters 的 texttops 检测（正确修复）"
 
-    sed -i '/CONFIGURE_ARGS/s/$/ TEXTTOPS=\/usr\/bin\/enscript/' "$FF_MK"
+    # 删除你之前插入的 TEXTTOPS=/usr/bin/enscript
+    sed -i 's/TEXTTOPS=\/usr\/bin\/enscript//g' "$FF_MK"
 
+    # 正确做法：禁用 texttops 检测，让它走内部 fallback
+    sed -i '/CONFIGURE_ARGS/s/$/ --disable-texttops/' "$FF_MK"
+
+    # 兜底：如果没有 CONFIGURE_ARGS，则插入一行
     if ! grep -q "CONFIGURE_ARGS" "$FF_MK"; then
-        echo 'CONFIGURE_ARGS += TEXTTOPS=/usr/bin/enscript' >> "$FF_MK"
-        echo "   -> 兜底：插入 TEXTTOPS=/usr/bin/enscript"
+        echo 'CONFIGURE_ARGS += --disable-texttops' >> "$FF_MK"
     fi
 fi
 
