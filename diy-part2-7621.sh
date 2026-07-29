@@ -96,14 +96,15 @@ fi
 GP_MK="package/feeds/printing/gutenprint/Makefile"
 
 if [ -f "$GP_MK" ]; then
-    echo "-> 修复 gutenprint malloc/realloc 检测"
+    echo "-> 修复 gutenprint malloc/realloc 检测（正确方式：CONFIGURE_VARS）"
 
-    sed -i '/CONFIGURE_ARGS/s/$/ ac_cv_func_malloc_0_nonnull=yes ac_cv_func_realloc_0_nonnull=yes/' "$GP_MK"
-
-    if ! grep -q "CONFIGURE_ARGS" "$GP_MK"; then
-        echo 'CONFIGURE_ARGS += ac_cv_func_malloc_0_nonnull=yes ac_cv_func_realloc_0_nonnull=yes' >> "$GP_MK"
-        echo "   -> 兜底：插入 malloc/realloc 检测补丁"
+    if grep -q "CONFIGURE_VARS" "$GP_MK"; then
+        sed -i '/CONFIGURE_VARS/s/$/ ac_cv_func_malloc_0_nonnull=yes ac_cv_func_realloc_0_nonnull=yes/' "$GP_MK"
+    else
+        echo 'CONFIGURE_VARS += ac_cv_func_malloc_0_nonnull=yes ac_cv_func_realloc_0_nonnull=yes' >> "$GP_MK"
     fi
+
+    echo "   -> 已正确注入 Autoconf 缓存变量"
 fi
 
 echo "=== diy-part2.sh: 打印链路补丁完成 ==="
