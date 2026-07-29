@@ -90,6 +90,30 @@ if [ -f "$FF_MK" ]; then
     fi
 fi
 
+
+# ------------------------------------------------------------------------------
+# splix 修复补丁（仅修改 splix，不影响其他 printing 包）
+# ------------------------------------------------------------------------------
+SPLIX_MK="package/feeds/printing/splix/Makefile"
+
+if [ -f "$SPLIX_MK" ]; then
+    echo "-> 修复 splix: C++ 标准 / JBIG 库名 / include 路径"
+
+    # 1. 修复 C++ 标准：新版 splix 仍是 C++03 风格，不能强行用 C++14
+    sed -i 's/-std=gnu++14/-std=gnu++03/' "$SPLIX_MK"
+
+    # 2. 修复 JBIG 库名：OpenWrt 24.10 的 libjbigkit 导出的是 libjbig.so
+    sed -i 's/-ljbig85/-ljbig/' "$SPLIX_MK"
+
+    # 3. 确保 include 路径正确传递（cups/image.h 依赖）
+    # 如果已经存在则不会重复添加
+    if ! grep -q 'I$(STAGING_DIR)/usr/include' "$SPLIX_MK"; then
+        sed -i '/TARGET_CXXFLAGS/s/$/ -I$(STAGING_DIR)\/usr\/include/' "$SPLIX_MK"
+    fi
+
+    echo "   -> splix 修复补丁应用完成"
+fi
+
 # ------------------------------------------------------------------------------
 # 3. gutenprint 修复（含兜底）
 # ------------------------------------------------------------------------------
