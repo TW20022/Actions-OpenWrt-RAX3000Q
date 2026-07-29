@@ -71,50 +71,6 @@ if [ -d "$JB_DIR" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 2. foomatic-filters 修复（含兜底）
-# ------------------------------------------------------------------------------
-FF_MK="package/feeds/printing/foomatic-filters/Makefile"
-
-if [ -f "$FF_MK" ]; then
-    echo "-> 禁用 foomatic-filters 的 texttops 检测（正确修复）"
-
-    # 删除你之前插入的 TEXTTOPS=/usr/bin/enscript
-    sed -i 's/TEXTTOPS=\/usr\/bin\/enscript//g' "$FF_MK"
-
-    # 正确做法：禁用 texttops 检测，让它走内部 fallback
-    sed -i '/CONFIGURE_ARGS/s/$/ --disable-texttops/' "$FF_MK"
-
-    # 兜底：如果没有 CONFIGURE_ARGS，则插入一行
-    if ! grep -q "CONFIGURE_ARGS" "$FF_MK"; then
-        echo 'CONFIGURE_ARGS += --disable-texttops' >> "$FF_MK"
-    fi
-fi
-
-
-# ------------------------------------------------------------------------------
-# splix 修复补丁（仅修改 splix，不影响其他 printing 包）
-# ------------------------------------------------------------------------------
-SPLIX_MK="package/feeds/printing/splix/Makefile"
-
-if [ -f "$SPLIX_MK" ]; then
-    echo "-> 修复 splix: C++ 标准 / JBIG 库名 / include 路径"
-
-    # 1. 修复 C++ 标准：新版 splix 仍是 C++03 风格，不能强行用 C++14
-    sed -i 's/-std=gnu++14/-std=gnu++03/' "$SPLIX_MK"
-
-    # 2. 修复 JBIG 库名：OpenWrt 24.10 的 libjbigkit 导出的是 libjbig.so
-    sed -i 's/-ljbig85/-ljbig/' "$SPLIX_MK"
-
-    # 3. 确保 include 路径正确传递（cups/image.h 依赖）
-    # 如果已经存在则不会重复添加
-    if ! grep -q 'I$(STAGING_DIR)/usr/include' "$SPLIX_MK"; then
-        sed -i '/TARGET_CXXFLAGS/s/$/ -I$(STAGING_DIR)\/usr\/include/' "$SPLIX_MK"
-    fi
-
-    echo "   -> splix 修复补丁应用完成"
-fi
-
-# ------------------------------------------------------------------------------
 # 3. gutenprint 修复（含兜底）
 # ------------------------------------------------------------------------------
 GP_MK="package/feeds/printing/gutenprint/Makefile"
